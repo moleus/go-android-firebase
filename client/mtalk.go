@@ -2,21 +2,26 @@ package firebase_client
 
 import (
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"strconv"
+	"sync"
+	"time"
+
 	firebase_api "github.com/BRUHItsABunny/go-android-firebase/api"
 	"github.com/BRUHItsABunny/go-android-firebase/constants"
 	"github.com/davecgh/go-spew/spew"
 	"go.uber.org/atomic"
 	"google.golang.org/protobuf/proto"
-	"io"
-	"net"
-	"strconv"
-	"sync"
 )
 
-type MTalkMessageProcessor func(message proto.Message)
-type MTalkNotificationProcessor func(notification *firebase_api.DataMessageStanza)
+type (
+	MTalkMessageProcessor      func(message proto.Message)
+	MTalkNotificationProcessor func(notification *firebase_api.DataMessageStanza)
+)
 
 type MTalkCon struct {
 	RawConn net.Conn
@@ -66,7 +71,7 @@ func (c *MTalkCon) Connect() error {
 	if version != MTalkVersion {
 		return errors.New("mtalk version not consistent")
 	}
-	// fmt.Println(fmt.Sprintf("version: %d", version))
+	fmt.Println(fmt.Sprintf("version: %d", version))
 
 	loginResp, err := c.readMessage()
 	if err != nil {
@@ -171,12 +176,12 @@ func (c *MTalkCon) readMessage() (proto.Message, error) {
 		return nil, fmt.Errorf("proto.Unmarshal: %w", err)
 	}
 	c.streamId++
-	// fmt.Println("IO:IN:\n", spew.Sdump(result))
+	fmt.Println("IO:IN:\n", spew.Sdump(result))
 	return result, nil
 }
 
 func (c *MTalkCon) writeMessage(tag firebase_api.MCSTag, message proto.Message) error {
-	// fmt.Println("IO:OUT:\n", spew.Sdump(message))
+	fmt.Println("IO:OUT:\n", spew.Sdump(message))
 	protoBytes, err := proto.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("proto.Marshal: %w", err)
@@ -283,7 +288,7 @@ func (c *MTalkCon) readBytes(len int) ([]byte, error) {
 		err = nil
 	}
 	result = buf[:read]
-	// fmt.Println(fmt.Sprintf("%s\tIO:BYTESIN:%s", time.Now().Format(time.RFC3339), hex.EncodeToString(result)))
+	fmt.Println(fmt.Sprintf("%s\tIO:BYTESIN:%s", time.Now().Format(time.RFC3339), hex.EncodeToString(result)))
 	return result, err
 }
 
@@ -299,7 +304,7 @@ func (c *MTalkCon) readByte() (byte, error) {
 }
 
 func (c *MTalkCon) writeBytes(data []byte) error {
-	// fmt.Println(fmt.Sprintf("%s\tIO:BYTESOUT:%s", time.Now().Format(time.RFC3339), hex.EncodeToString(data)))
+	fmt.Println(fmt.Sprintf("%s\tIO:BYTESOUT:%s", time.Now().Format(time.RFC3339), hex.EncodeToString(data)))
 	_, err := c.RawConn.Write(data)
 	if err != nil {
 		// return fmt.Errorf("c.IO.WriteMessage: %w", err)
